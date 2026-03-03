@@ -8,7 +8,143 @@ CLI tool for generating and scheduling social media posts. Connects to **Coda** 
 Coda (brief) → AI (generate) → Review (edit/regenerate) → Postiz (schedule)
 ```
 
-## Installation
+## Use as a Claude Code Skill
+
+pulse-cli can be used as a [Claude Code custom skill](https://docs.anthropic.com/en/docs/claude-code/skills), allowing you to invoke it directly from Claude Code with slash commands like `/pulse-run`, `/pulse-generate`, etc.
+
+### Quick Setup
+
+1. **Clone into your project's `.claude/skills/` directory** (or any location Claude Code discovers skills from):
+
+```bash
+# Project-level skill (available in this project)
+mkdir -p .claude/skills
+git clone git@github.com:arun-videodb/pulse-cli.git .claude/skills/pulse-cli
+cd .claude/skills/pulse-cli && npm install && cd -
+
+# Or personal skill (available in all your projects)
+mkdir -p ~/.claude/skills
+git clone git@github.com:arun-videodb/pulse-cli.git ~/.claude/skills/pulse-cli
+cd ~/.claude/skills/pulse-cli && npm install && cd -
+```
+
+2. **Create the skill file** at `.claude/skills/pulse-cli/SKILL.md`:
+
+```yaml
+---
+name: pulse
+description: Generate and schedule social media posts to X, LinkedIn, and Reddit.
+  Fetches briefs from Coda, generates platform-native content with AI, and schedules
+  via Postiz. Use when the user wants to create, generate, or schedule social posts.
+allowed-tools: Bash(npx tsx *)
+---
+
+# Pulse CLI — Social Media Post Generator & Scheduler
+
+You have access to the pulse-cli tool for generating and scheduling social media posts.
+
+## Available Commands
+
+Run all commands from the pulse-cli skill directory.
+
+### Full Pipeline (interactive)
+`npx tsx src/index.ts run`
+
+### Individual Commands
+- **Configure:** `npx tsx src/index.ts config --set KEY=VALUE`
+- **List Coda docs:** `npx tsx src/index.ts coda list [--query "search"]`
+- **Fetch Coda page:** `npx tsx src/index.ts coda fetch <docId> [--page <pageId>]`
+- **List integrations:** `npx tsx src/index.ts integrations`
+- **Generate posts:** `npx tsx src/index.ts generate --brief "..." --platforms x,linkedin,reddit`
+- **Schedule posts:** `npx tsx src/index.ts schedule --input posts.json --date <ISO-date>`
+
+### Non-Interactive Usage (for Claude)
+When running commands on behalf of the user, prefer non-interactive flags:
+
+```bash
+# Generate with all flags (no prompts)
+npx tsx src/index.ts generate \
+  --brief "Product brief text here" \
+  --platforms x,linkedin,reddit \
+  --model anthropic:claude-sonnet-4-20250514 \
+  --output /tmp/pulse-posts.json
+
+# Schedule from generated file
+npx tsx src/index.ts schedule \
+  --input /tmp/pulse-posts.json \
+  --date 2026-03-10T10:00:00Z \
+  --type schedule
+```
+
+### Coda Integration
+Fetch briefs and system prompts from Coda documents:
+```bash
+# List available docs
+npx tsx src/index.ts coda list
+
+# Fetch a specific page as markdown
+npx tsx src/index.ts coda fetch <docId> --page "Brief" --output /tmp/brief.md
+```
+
+## Workflow
+1. Fetch brief from Coda (or user provides inline)
+2. Generate platform-specific posts with AI
+3. Show posts to user for review
+4. Collect platform settings (subreddit, reply permissions, etc.)
+5. Schedule via Postiz
+```
+
+3. **Configure API keys** (one-time):
+
+```bash
+cd .claude/skills/pulse-cli
+npx tsx src/index.ts config --set POSTIZ_API_KEY=your-key
+npx tsx src/index.ts config --set CODA_API_KEY=your-key
+npx tsx src/index.ts config --set ANTHROPIC_API_KEY=your-key
+npx tsx src/index.ts config --set AI_MODEL=anthropic:claude-sonnet-4-20250514
+```
+
+### Usage in Claude Code
+
+Once configured, invoke from any Claude Code session:
+
+```
+/pulse generate posts for our new API launch, post on X and LinkedIn
+/pulse schedule the generated posts for tomorrow at 10am UTC
+/pulse fetch the brief from our VideoDB GTM coda doc and generate posts
+```
+
+Claude will use the skill instructions to run the appropriate pulse-cli commands, show you the generated posts for review, and handle scheduling.
+
+### Sub-Skills (Optional)
+
+For more granular slash commands, create separate skill files:
+
+**`.claude/skills/pulse-generate/SKILL.md`**
+```yaml
+---
+name: pulse-generate
+description: Generate social media posts from a brief using AI
+allowed-tools: Bash(npx tsx *)
+---
+Run `npx tsx <path-to-pulse-cli>/src/index.ts generate $ARGUMENTS`
+Show the generated posts to the user for review.
+```
+
+**`.claude/skills/pulse-coda/SKILL.md`**
+```yaml
+---
+name: pulse-coda
+description: Browse and fetch content from Coda documents
+allowed-tools: Bash(npx tsx *)
+---
+Run `npx tsx <path-to-pulse-cli>/src/index.ts coda $ARGUMENTS`
+Display the results to the user.
+```
+
+---
+
+## Installation (Standalone)
 
 ```bash
 git clone git@github.com:arun-videodb/pulse-cli.git
