@@ -54,8 +54,17 @@ Interactive workflow: fetch brief → generate posts → review → schedule.
 | `--key-points <text>` | Additional key points | `--key-points "Free tier available, 10x faster"` |
 | `--demo-url <url>` | Demo video URL to reference | `--demo-url https://youtu.be/abc123` |
 | `--system-prompt <text>` | Custom system prompt | `--system-prompt "Write in a casual, developer-friendly tone"` |
-| `-d, --date <iso>` | Schedule date in ISO 8601 (UTC) | `-d 2026-03-10T10:00:00Z` |
+| `-d, --date <date>` | Schedule date (IST assumed) | `-d "tomorrow 10am"`, `-d "Mar 15 2:30pm"` |
 | `-t, --type <type>` | Post type | `-t schedule`, `-t now`, or `-t draft` |
+
+**Date formats** — all times are IST unless UTC is specified:
+
+| Format | Example |
+|--------|---------|
+| Relative | `tomorrow 10am`, `today 5pm` |
+| Month + day | `Mar 15 2:30pm`, `10 March 10am` |
+| Date + time | `2026-03-10 10am`, `2026-03-10 14:30` |
+| ISO 8601 (UTC) | `2026-03-10T10:00:00Z` |
 
 ### `/pulse generate` — Generate Posts
 
@@ -78,7 +87,7 @@ Schedule from a previously generated JSON file.
 | Flag | Description | Example |
 |------|-------------|---------|
 | `-i, --input <path>` | JSON file from `generate --output` | `-i ./generated-posts.json` |
-| `-d, --date <iso>` | Schedule date in ISO 8601 (UTC) | `-d 2026-03-10T14:30:00Z` |
+| `-d, --date <date>` | Schedule date (IST assumed) | `-d "tomorrow 10am"`, `-d "Mar 15 2:30pm"` |
 | `-t, --type <type>` | Post type | `-t schedule`, `-t now`, or `-t draft` |
 
 ### `/pulse coda list` — List Coda Documents

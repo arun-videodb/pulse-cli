@@ -17,6 +17,7 @@ import type { PostValueItem } from "../lib/ai/types.js";
 import type { GeneratedPostResult } from "../lib/ai/generate-posts.js";
 import { generatePostizId } from "../lib/ai/content-helpers.js";
 import { textToHtml } from "../lib/ai/content-helpers.js";
+import { parseDate, formatDateIST } from "../lib/date-parser.js";
 import * as ui from "../lib/ui.js";
 
 export interface ScheduleInput {
@@ -120,19 +121,30 @@ export async function runSchedule(
   }
 
   // --- Resolve date ---
-  let scheduleDate = options.date || new Date().toISOString();
-  if (scheduleType === "schedule" && !options.date) {
-    if (options.interactive !== false) {
-      scheduleDate = await input({
-        message: "Schedule date/time (ISO 8601, e.g. 2026-03-05T10:00:00Z):",
-        validate: (v) => {
-          const d = new Date(v);
-          if (isNaN(d.getTime())) return "Invalid date format";
-          if (d <= new Date()) return "Date must be in the future";
-          return true;
-        },
-      });
+  let scheduleDate = new Date().toISOString();
+  if (options.date) {
+    const parsed = parseDate(options.date);
+    if (!parsed) {
+      ui.error(`Could not parse date: "${options.date}"`);
+      return false;
     }
+    scheduleDate = parsed;
+  } else if (scheduleType === "schedule" && options.interactive !== false) {
+    const dateStr = await input({
+      message:
+        "Schedule date/time (e.g. tomorrow 10am, Mar 15 2:30pm, 2026-03-10 10am):",
+      validate: (v) => {
+        const parsed = parseDate(v);
+        if (!parsed) return 'Could not parse date. Try "tomorrow 10am" or "Mar 15 2:30pm"';
+        if (new Date(parsed) <= new Date()) return "Date must be in the future";
+        return true;
+      },
+    });
+    scheduleDate = parseDate(dateStr)!;
+  }
+
+  if (scheduleType === "schedule") {
+    ui.info(`Scheduled for: ${formatDateIST(scheduleDate)}`);
   }
 
   // --- Collect platform settings and build posts ---
@@ -213,7 +225,7 @@ export async function runSchedule(
 export const scheduleCommand = new Command("schedule")
   .description("Schedule posts from a JSON file via Postiz")
   .option("-i, --input <path>", "JSON file with generated posts")
-  .option("-d, --date <iso>", "Schedule date (ISO 8601)")
+  .option("-d, --date <date>", "Schedule date (e.g. 'tomorrow 10am', 'Mar 15 2:30pm')")
   .option(
     "-t, --type <type>",
     "Post type: schedule, now, or draft",

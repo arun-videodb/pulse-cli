@@ -20,7 +20,7 @@ export const runCommand = new Command("run")
   .option("--key-points <text>", "Additional key points")
   .option("--demo-url <url>", "Demo video URL")
   .option("--system-prompt <text>", "Custom system prompt")
-  .option("-d, --date <iso>", "Schedule date (ISO 8601)")
+  .option("-d, --date <date>", "Schedule date (e.g. 'tomorrow 10am', 'Mar 15 2:30pm')")
   .option("-t, --type <type>", "Post type: schedule, now, or draft")
   .action(async (options) => {
     ui.header("PULSE CLI — Social Media Post Pipeline");
